@@ -1,7 +1,9 @@
 ﻿namespace LazyLoadConsistencyPitfall
 {
 	using System;
+	using System.Data;
 	using System.Linq;
+	using System.Threading;
 	using NHibernate;
 
 	class Application
@@ -19,8 +21,8 @@
 
 			using (var session = _sessionFactory.OpenSession())
 			using (var transaction = session.BeginTransaction())
-			// Option #1 to achieve consistency: use RepeatableRead isolation level
-			// using (var transaction = session.BeginTransaction(IsolationLevel.RepeatableRead))
+			// Option #1 to achieve consistency: use RepeatableRead isolation level, but be prepared for exceptions!
+			//using (var transaction = session.BeginTransaction(IsolationLevel.RepeatableRead))
 			{
 				// SELECT order0_.Id as Id1_0_, order0_.Version as Version1_0_, order0_.CustomerId as CustomerId1_0_, order0_.Total as Total1_0_ FROM [Order] order0_ WHERE order0_.Id=1
 				var order = session.Get<Order>(orderId);
@@ -44,15 +46,23 @@
 
 		private void ConcurrentWriter(int orderId)
 		{
-			using (var session = _sessionFactory.OpenSession())
-			using (var transaction = session.BeginTransaction())
+			var thread = new Thread(() =>
 			{
-				var order = session.Get<Order>(orderId);
+				using (var session = _sessionFactory.OpenSession())
+				using (var transaction = session.BeginTransaction())
+				{
+					var order = session.Get<Order>(orderId);
 
-				order.BuyProduct("Whiskey", 1, 10.12);
+					order.BuyProduct("Whiskey", 1, 10.12);
 
-				transaction.Commit();
-			}
+					transaction.Commit();
+				}
+			});
+
+			thread.Start();
+
+			// give it chance to complete
+			thread.Join(1000);
 		}
 
 		private int CreateOrder()
