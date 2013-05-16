@@ -19,7 +19,7 @@
 
 			using (var session = _sessionFactory.OpenSession())
 			using (var transaction = session.BeginTransaction())
-			// uncomment to achieve consistency
+			// Option #1 to achieve consistency: use RepeatableRead isolation level
 			// using (var transaction = session.BeginTransaction(IsolationLevel.RepeatableRead))
 			{
 				// SELECT order0_.Id as Id1_0_, order0_.Version as Version1_0_, order0_.CustomerId as CustomerId1_0_, order0_.Total as Total1_0_ FROM [Order] order0_ WHERE order0_.Id=1

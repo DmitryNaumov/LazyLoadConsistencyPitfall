@@ -19,6 +19,8 @@ namespace LazyLoadConsistencyPitfall
 				.Inverse()
 				.Cascade.All()
 				.LazyLoad();
+				// Option #2 to achieve consistency: avoid lazy loads
+				// .Not.LazyLoad().Fetch.Join();
 		}
 	}
 }
